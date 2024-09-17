@@ -3,6 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import scanpy as sc
 import pandas as pd 
+import scipy
 from scipy.sparse import csr_matrix
 import numpy as np
 import torch.autograd as autograd
@@ -51,7 +52,10 @@ class Fountain(nn.Module):
             
         
     def get_latent(self,adata,device='cuda:0',emb='fountain'):
-        
+        if scipy.sparse.issparse(adata.X):
+    		adata.X = adata.X.astype(np.float32)
+	else:
+    		adata.X = adata.X.astype(np.float32)
         adata_X=adata.X.todense() 
         adata_X=torch.tensor(adata_X).to(device)
         self.to(device)

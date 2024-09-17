@@ -29,11 +29,10 @@ def cluster_evaluation(adata_obs, label_key, cluster_key):
     AMI = sklearn.metrics.adjusted_mutual_info_score(adata_obs[label_key], adata_obs[cluster_key])
     ARI = sklearn.metrics.adjusted_rand_score(adata_obs[cluster_key], adata_obs[label_key])
     NMI = sklearn.metrics.normalized_mutual_info_score(adata_obs[cluster_key], adata_obs[label_key])
-    HOM = sklearn.metrics.homogeneity_score(adata_obs[label_key], adata_obs[cluster_key])
 
     
-    print('AMI:%.3f\tARI:%.3f\tNMI:%.3f\tHOM:%.3f\t'%(AMI,ARI,NMI,HOM))
-    return AMI,ARI,NMI,HOM
+    print('AMI:%.3f\tARI:%.3f\tNMI:%.3f\t'%(AMI,ARI,NMI))
+    return AMI,ARI,NMI
 
 
 
