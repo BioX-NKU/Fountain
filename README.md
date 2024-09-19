@@ -8,7 +8,7 @@
 It's prefered to create a new environment for Fountain
 
 ```
-conda create -n Fountain python==3.9
+conda create -n Fountain python==3.8
 conda activate Fountain
 ```
 
@@ -20,19 +20,19 @@ pip install scFountain
 
 Installation via Github is also provided
 
-```
-git clone https://github.com/Biox-NKU/Fountain
-cd Fountain
-pip install Fountain-0.0.9-py3-none-any.whl
-```
 
-This process will take approximately 5 to 10 minutes, depending on the user's computer device and internet connectivition.
+
+This process will take approximately 2 to 10 minutes, depending on the user's computer device and internet connectivition.
+
+## Tutorial
+
+Usage and examples of Fountain's main functions are showed in [tutorial](https://github.com/BioX-NKU/Fountain/Tutorial.ipynb).
+
+
 
 ## Quick Start
 
 Fountain is a deep learning framework for batch integration on scATAC-seq data utilizing  regularized barycentric mapping. Fountain could be easily used following: generating batch-corrected low-dimensional embeddings, generating batch-corrected and enhanced ATAC profiles in the original dimension, and online integration. 
-
-Usage and examples of Fountain's main functions are showed in [tutorial](https://github.com/BioX-NKU/Fountain/Tutorial.ipynb).
 
 
 ### Input format
@@ -42,8 +42,8 @@ Usage and examples of Fountain's main functions are showed in [tutorial](https:/
 * **count matrix file**:  
 	* Rows correspond to peaks and columns to cells.
 
-* **Batch label and cell type label**:  
-	* The batch label and cell type label are included in anndata.obs.
+* **batch label and cell type label**:  
+	* The batch label and cell type labels are included in anndata.obs. Cell type labels are used for indicator evaluation, rather than being necessary for training
 
 
 ### 1. Data preprocessing
@@ -88,7 +88,8 @@ import matplotlib.pyplot as plt
   
   ```python
   batchind_dict=create_batchind_dict(adata,batch_name='batch')
-  dataloader=create_dataloader(adata,batch_size=256,batchind_dict=batchind_dict,batch_name='batch',num_worker=4,droplast=True)
+  batchsize=min(128*len(batchind_dict),1024)
+  dataloader=create_dataloader(adata,batch_size=batchsize,batchind_dict=batchind_dict,batch_name='batch',num_worker=4,droplast=True)
   enc=[['fc', 1024, '', 'gelu'],['fc', 256, '', 'gelu'],['fc', 16, '', '']]
   dec=[['fc', adata.X.shape[1], '', '']]
   #early_stopping= EarlyStopping_simple(patience=30)
@@ -103,11 +104,11 @@ import matplotlib.pyplot as plt
   ```python
   model.train(            
             dataloader,             
-            lambda_mse=0.005, #
-            lambda_Eigenvalue=0.5,#
-            eigenvalue_type='mean',#'mean' or 'normal'
-            max_iteration=30000,###
-            mid_iteration=3000,###
+            lambda_mse=0.005, 
+            lambda_Eigenvalue=0.5,
+            eigenvalue_type='mean',
+            max_iteration=30000,
+            mid_iteration=3000,
             loss='Negative_multinomial',
             early_stopping=early_stopping,
             device=device, 
