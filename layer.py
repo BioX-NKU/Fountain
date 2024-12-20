@@ -169,30 +169,7 @@ class NN(nn.Module):
         return x
     
         
-class Encoder(nn.Module):
-    """
-     Encoder
-    """
-    def __init__(self, input_dim, cfg):
-        """
-        Parameters
-        ----------
-        input_dim
-            input dimension
-        cfg
-            encoder configuration, e.g. enc_cfg = [['fc', 1024, 1, 'relu'],['fc', 10, '', '']]
-        
-        """
-        super().__init__()
-        self.enc = NN(input_dim, cfg)
-    def forward(self, x,y=None):
-        """
-        """
-#         q = self.enc[domain](x)
-#         mu = self.mu_enc[domain](q)
-#         var = torch.exp(self.var_enc[domain](q))
-#         z = self.reparameterize(mu, var)
-        return self.enc(x,y)
+
 
 class Encoder_vae(nn.Module):
     """
@@ -215,43 +192,15 @@ class Encoder_vae(nn.Module):
         
     def reparameterize(self, mu, var):
         return mu+var.sqrt()*torch.randn(mu.size(),device=mu.device)
-        #return mu+var.sqrt()*torch.normal(mean=torch.zeros_like(mu),std=1.0)
-   
-        #return Normal(mu, var.sqrt()).rsample()
 
     def forward(self, x, y=None):
         q = self.enc(x, y)
         mu = self.mu_enc(q, y)
         var = torch.exp(self.var_enc(q, y))+1e-6
-        #var = (self.var_enc(q, y))**2+1e-8
         z = self.reparameterize(mu, var)
         return z, mu, var
                                              
-class Decoder(nn.Module):
 
-    def __init__(self, z_dim, cfg):
-        """
-        Parameters
-        ----------
-        z_dim
-            latent dimension
-        cfg
-            decoder configuration, e.g. dec_cfg = [['fc', adatas[i].obsm[obsm[i]].shape[1], 1, 'sigmoid']]
-        """
-        super().__init__()
-
-        dec = []       
-        for i in cfg.keys():
-            dec.append(NN(z_dim, cfg[i]))
-
-        self.dec = nn.ModuleList(dec)
-
-
-    def forward(self, z, domain):
-
-        reconx_x = self.dec[domain](z)
-
-        return reconx_x
     
     
  

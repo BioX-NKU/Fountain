@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 import scipy
 from scipy.sparse import issparse, csr
-
+from scipy.sparse import csr_matrix
 import torch
 from torch.utils.data import Dataset
 from torch.utils.data.sampler import Sampler
@@ -66,35 +66,6 @@ class BatchSampler(Sampler):
             return len(self.batch_id) // self.batch_size
         else:
             return (len(self.batch_id)+self.batch_size-1) // self.batch_size
-        
-    
-class SingleCellDataset(Dataset):
-    """
-    Dataloader of single-cell data
-    """
-    def __init__(self, adata,batchind_dict,batch_name='batch'):
-        """
-        create a SingleCellDataset object
-            
-        Parameters
-        ----------
-        adata
-            AnnData object wrapping the single-cell data matrix
-        """
-        self.adata_X = torch.from_numpy(adata.X.toarray())
-        self.adata_batch=adata.obs[batch_name]
-        self.batchind_dict=batchind_dict
-        self.batch_name=batch_name   #'batch'
-        
-    def __len__(self):
-        return self.adata_X.shape[0]
-    
-    def __getitem__(self, idx):
-        x = self.adata_X[idx].squeeze()
-        #domain_id = self.adata.obs[self.batch_name].cat.codes[idx]
-        domain_id =  self.adata_batch[idx]
-        domain_id=self.batchind_dict[domain_id]
-        return x, domain_id
     
 def create_batchind_dict(adata,batch_name='batch'):#max
     max_batchid=adata.obs[batch_name].value_counts().idxmax()
@@ -114,18 +85,58 @@ def create_batchind_list(adata,batch_name='batch'):#max
     batchind_list[0]=max_batchid
    
     return batchind_list
+        
 
-   
-def create_dataloader(adata,batch_size,batchind_dict,batch_name='batch',num_worker=4,droplast=False):
-    scdata = SingleCellDataset(adata,batchind_dict,batch_name) 
-    scdataloader = DataLoader(scdata, batch_size=batch_size,num_workers=num_worker,drop_last=droplast,shuffle=True)
-    return scdataloader
+
+    
+# def create_dataloader(adata,batch_size,batchind_dict,batch_name='batch',num_worker=4,droplast=False):
+#     scdata = SingleCellDataset(adata,batchind_dict,batch_name) 
+#     scdataloader = DataLoader(scdata, batch_size=batch_size,num_workers=num_worker,drop_last=droplast,shuffle=True)
+#     return scdataloader
+    
+class SingleCellDataset(Dataset):
+    """
+    Dataloader of single-cell data
+    """
+    def __init__(self, adata, batchind_dict, batch_name='batch'):
+        """
+        Create a SingleCellDataset object
+        
+        Parameters
+        ----------
+        adata
+            AnnData object wrapping the single-cell data matrix
+        """
+        self.adata = adata
+        self.adata_batch = adata.obs[batch_name]
+        self.batchind_dict = batchind_dict
+        self.batch_name = batch_name
+        
+        
+
+    def __len__(self):
+        return self.adata.shape[0]
+    
+    def __getitem__(self, idx):
+        
+        x = torch.tensor(self.adata.X[idx].toarray().squeeze())
+
+        # 获取 domain_id
+        domain_id = self.adata_batch[idx]
+        domain_id = self.batchind_dict[domain_id]
+        
+        return x, domain_id, idx
+
     
 
-
-
-
-
+  
+    
+    
+    
+def create_dataloader(adata, batch_size, batchind_dict, batch_name='batch', num_worker=4, droplast=False):
+    scdata = SingleCellDataset(adata, batchind_dict, batch_name) 
+    scdataloader = DataLoader(scdata, batch_size=batch_size, num_workers=num_worker, drop_last=droplast, shuffle=True)
+    return scdataloader
 
 
 

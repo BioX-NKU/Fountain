@@ -5,7 +5,7 @@
 
 ## Package installation
 
-It's prefered to create a new environment for Fountain
+It is prefered to create a new environment for Fountain.
 
 ```
 conda create -n Fountain python==3.8
@@ -26,13 +26,13 @@ This process will take approximately 2 to 10 minutes, depending on the user's co
 
 ## Tutorial
 
-Usage and examples of Fountain's main functions are showed in [tutorial](https://github.com/BioX-NKU/Fountain/Tutorial.ipynb).
+Usage and examples of Fountain's main functions are shown in [tutorial](https://github.com/BioX-NKU/Fountain/tree/main/Tutorials).
 
 
 
 ## Quick Start
 
-Fountain is a deep learning framework for batch integration on scATAC-seq data utilizing  regularized barycentric mapping. Fountain could be easily used following: generating batch-corrected low-dimensional embeddings, generating batch-corrected and enhanced ATAC profiles in the original dimension, and online integration. 
+Fountain is a deep learning framework for batch integration on scATAC-seq data utilizing  regularized barycentric mapping. Fountain can be easily used for: generating batch-corrected low-dimensional embeddings, generating batch-corrected and enhanced ATAC profiles in the original dimension, and online integration. 
 
 
 ### Input format
@@ -43,7 +43,7 @@ Fountain is a deep learning framework for batch integration on scATAC-seq data u
 	* Rows correspond to peaks and columns to cells.
 
 * **batch label and cell type label**:  
-	* The batch label and cell type labels are included in anndata.obs. Cell type labels are used for indicator evaluation, rather than being necessary for training
+	* The batch label and cell type labels are included in anndata.obs. Cell type labels are used for evaluation, rather than being necessary for training.
 
 
 ### 1. Data preprocessing
@@ -56,10 +56,7 @@ import sklearn
 import pandas as pd 
 import torch
 from Fountain.data import create_dataloader,create_batchind_dict
-import Fountain.layer
 from Fountain.fountain import Fountain
-from Fountain.utils import cluster_evaluation
-from Fountain.utils import overcorrection_score
 import scib
 import matplotlib.pyplot as plt
   ```
@@ -71,14 +68,13 @@ import matplotlib.pyplot as plt
   
   ```python
   adata=sc.read("./MB.h5ad")
-  binary=True
   fpeak=0.04
-  if binary: epi.pp.binarize(adata)
+  epi.pp.binarize(adata)
   epi.pp.filter_features(adata, min_cells=np.ceil(fpeak*adata.shape[0]))
   ```
   
   
-  Anndata object is a Python object/container designed to store single-cell data in Python packege [**anndata**](https://anndata.readthedocs.io/en/latest/) which is seamlessly integrated with [**scanpy**](https://scanpy.readthedocs.io/en/stable/), a widely-used Python library for single-cell data analysis.
+  Anndata object is a Python object/container designed for storing single-cell data in Python packege [**anndata**](https://anndata.readthedocs.io/en/latest/) which is seamlessly integrated with [**scanpy**](https://scanpy.readthedocs.io/en/stable/), a widely-used Python library for single-cell data analysis.
 
  
 ### 2. Model training
@@ -89,27 +85,24 @@ import matplotlib.pyplot as plt
   ```python
   batchind_dict=create_batchind_dict(adata,batch_name='batch')
   batchsize=min(128*len(batchind_dict),1024)
-  dataloader=create_dataloader(adata,batch_size=batchsize,batchind_dict=batchind_dict,batch_name='batch',num_worker=4,droplast=True)
+  dataloader=create_dataloader(adata,batch_size=batchsize,batchind_dict=batchind_dict,batch_name='batch',num_worker=4,droplast=False)
   enc=[['fc', 1024, '', 'gelu'],['fc', 256, '', 'gelu'],['fc', 16, '', '']]
   dec=[['fc', adata.X.shape[1], '', '']]
-  #early_stopping= EarlyStopping_simple(patience=30)
   early_stopping= None
   device='cuda:0'
   ```
 
 
 
-* Fountain model could be easily trained as following:
+* Fountain model can be easily trained as following:
   
   ```python
   model.train(            
             dataloader,             
             lambda_mse=0.005, 
             lambda_Eigenvalue=0.5,
-            eigenvalue_type='mean',
             max_iteration=30000,
             mid_iteration=3000,
-            loss='Negative_multinomial',
             early_stopping=early_stopping,
             device=device, 
         )
@@ -118,10 +111,11 @@ import matplotlib.pyplot as plt
   
 ### 3. Generating batch-corrected low-dimensional embeddings
 
-* Fountain provide a API to get batch-corrected low-dimensional embeddings of scATAC-seq data, you could get batch-corrected embeddings as follow:
+* Fountain provides an API to get batch-corrected low-dimensional embeddings of scATAC-seq data. You can get batch-corrected embeddings by:
   
   ```python
-  model.get_latent(adata,device=device,emb='fountain')
+  emb='fountain'
+  adata.obsm[emb]=model.get_latent(dataloader,device=device)
   ```
 * We provide codes to visualization the low-dimensional embeddings of data:
 
@@ -133,18 +127,16 @@ import matplotlib.pyplot as plt
 
 ### 4. Generating batch-corrected and enhanced ATAC profiles in the original dimension
 
-* Fountain provide a API to get batch-corrected and enhanced ATAC profiles in the original dimension, you could get the enhanced data as follow:
+* Fountain provides an API to get batch-corrected and enhanced ATAC profiles in the original dimension. You can get the enhanced data by:
   
   ```python
-  adata.layers['enhance']=model.enhance(adata,device='cuda:0',batch_name='batch')
+  adata.layers['enhance']=model.enhance(adata,device=device,batch_name='batch')
   ```
 
 ### 5. Achieving online integration
 
-* You could achieve online integration as follow:
+* You can achieve online integration through the model.get_latent function. Please refer to the tutorial for more details.
   
-  ```python
-  model.get_latent(adata,device=device,emb='online')
-  ```
+
 
 

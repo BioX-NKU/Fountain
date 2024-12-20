@@ -3,7 +3,6 @@ import torch.nn as nn
 import torch.nn.functional as F
 import scanpy as sc
 import pandas as pd 
-import scipy
 from scipy.sparse import csr_matrix
 import numpy as np
 import torch.autograd as autograd
@@ -17,10 +16,10 @@ import math
 import sys
 import time
 import anndata as ad
-from .layer import *
-from .loss import *
-from .utils import *
-from .data import *
+from Fountain.layer import *
+from Fountain.loss import *
+from Fountain.utils import *
+from Fountain.data import *
 
 
 class Fountain(nn.Module):
@@ -44,24 +43,25 @@ class Fountain(nn.Module):
         
         n_batch=n_domain
         x_dim=dec[-1][1]
+        self.n_cell=adata.shape[0]
         self.encoder = Encoder_vae(x_dim, enc)
         self.decoder = NN(self.z_dim+n_batch, dec)
         self.n_domain = n_domain       
         self.batch_ind=create_batchind_list(adata,batch_name)        
         self.r=nn.Parameter(torch.Tensor([r_negative_multinomial]),requires_grad=True) 
-            
+        del adata    
         
-    def get_latent(self,adata,device='cuda:0',emb='fountain'):
-        if scipy.sparse.issparse(adata.X):
-    		adata.X = adata.X.astype(np.float32)
-	else:
-    		adata.X = adata.X.astype(np.float32)
-        adata_X=adata.X.todense() 
-        adata_X=torch.tensor(adata_X).to(device)
+    def get_latent(self,dataloader,device='cuda:0'):
         self.to(device)
-        _,mu,_=self.encoder.forward(adata_X)
-        rep=mu.detach().cpu()
-        adata.obsm[emb]=rep.numpy()
+        n_cell=len(dataloader.dataset)
+        X_latent=torch.zeros((n_cell, self.z_dim)).to(device)
+        for x,domain_id,idx in dataloader:
+            with torch.no_grad():
+                X=x.float().to(device) 
+                mu=self.encoder.forward(X)[1]
+                X_latent[idx]=mu
+        return  X_latent.cpu().numpy()
+            
         
     
     def enhance(self,adata,device='cuda:0',latent_rep='mu',batch_name='batch'):
@@ -144,7 +144,7 @@ class Fountain(nn.Module):
                 tk0 = tqdm(enumerate(dataloader), total=len(dataloader), leave=False, desc='Iterations', disable=(not verbose))
                 epoch_loss = defaultdict(float)
                                                                                  
-                for i, (x,domain_id) in tk0:
+                for i, (x,domain_id,_) in tk0:
                     
                     recon_loss = torch.tensor(0.0).to(device)
                     kl_loss = torch.tensor(0.0).to(device)
