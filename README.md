@@ -32,7 +32,7 @@ Usage and examples of Fountain's main functions are shown in [tutorial](https://
 
 ## Quick Start
 
-Fountain is a deep learning framework for batch integration on scATAC-seq data utilizing  regularized barycentric mapping. Fountain can be easily used for: generating batch-corrected low-dimensional embeddings, generating batch-corrected and enhanced ATAC profiles in the original dimension, and online integration. 
+Fountain is a deep learning framework for batch integration on scATAC-seq data utilizing regularized barycentric mapping. Fountain can be easily used for: generating batch-corrected low-dimensional embeddings, generating batch-corrected and enhanced ATAC profiles in the original dimension, and online integration. 
 
 
 ### Input format
@@ -127,16 +127,20 @@ import matplotlib.pyplot as plt
 
 ### 4. Generating batch-corrected and enhanced ATAC profiles in the original dimension
 
-* Fountain provides an API to get batch-corrected and enhanced ATAC profiles in the original dimension. You can get the enhanced data by:
+* Fountain provides an API to get batch-corrected and enhanced ATAC profiles in the original dimension. We also provide a [tutorial](https://github.com/BioX-NKU/Fountain/tree/main/Tutorials/Batch%20correction.ipynb) for using Fountain to Generate batch-corrected and enhanced ATAC profiles in the original dimension. You can get the enhanced data by:
   
   ```python
   adata.layers['enhance']=model.enhance(adata,device=device,batch_name='batch')
   ```
 
-### 5. Achieving online integration
+### 5. Using Fountain-enhanced ATAC profiles for data analysis
 
-* You can achieve online integration through the model.get_latent function. Please refer to the tutorial for more details.
+* You can chick  [enhanced_MB.h5ad](https://drive.google.com/file/d/13nLqv6IC1OzqrgjnRMJ-MvWBFeW6f6Ur/view?usp=drive_link) to download the example dataset that have been enhanced by Fountain and directly try the [tutorial](https://github.com/BioX-NKU/Fountain/tree/main/Tutorials/Data%20analysis.ipynb) for using Fountain-enhanced ATAC profiles for data analysis. 
+
+### 6. Achieving online integration
+
+* You can achieve online integration through the model.get_latent function. Please refer to the [tutorial](https://github.com/BioX-NKU/Fountain/blob/main/Tutorials/Online%20integration.ipynb) for more details.
   
+### 7. Correcting batch effect of scRNA-seq data.
 
-
-
+* Fountain not only allows for batch effect correction in scATAC-seq data, but it can also be extended to other omics. Using the framework of Fountain for batch effect correction in scRNA-seq data is a promising approach. We provide a example [tutorial](https://github.com/BioX-NKU/Fountain/tree/main/Tutorials/Correct%20batch%20effect%20of%20scRNA-seq%20data.ipynb) on how to and apply Fountain to correct batch effects in scRNA-seq data.
