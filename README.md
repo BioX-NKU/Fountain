@@ -1,4 +1,4 @@
-[![PyPI](https://img.shields.io/pypi/v/scFountain.svg)](https://pypi.org/project/scFountain/)
+[![PyPI](https://img.shields.io/pypi/v/scFountain.svg)](https://pypi.org/project/scFountain/) [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.14924285.svg)](https://doi.org/10.5281/zenodo.14924285)
 
 # Rigorous integration of single-cell ATAC-seq data using regularized barycentric mapping
 ![](Fountain.png)
