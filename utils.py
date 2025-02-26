@@ -89,39 +89,6 @@ def token_map(x,j,n_domain,device):
     batch_token=(j*torch.ones(x.size(0))).to(torch.int64).to(device)
     batch_token=F.one_hot(batch_token,num_classes=n_domain).to(torch.float32)
     return torch.cat((x,batch_token),1)
-
-def TFIDF(adata,tfidf):
-    # Perform TF-IDF (count_mat: peak*cell)
-    def tfidf1(count_mat): 
-        nfreqs = 1.0 * count_mat / np.tile(np.sum(count_mat,axis=0), (count_mat.shape[0],1))
-        tfidf_mat = np.multiply(nfreqs, np.tile(np.log(1 + 1.0 * count_mat.shape[1] / np.sum(count_mat,axis=1)).reshape(-1,1), (1,count_mat.shape[1])))
-        return scipy.sparse.csr_matrix(tfidf_mat)
-
-    # Perform Signac TF-IDF (count_mat: peak*cell)
-    def tfidf2(count_mat): 
-        tf_mat = 1.0 * count_mat / np.tile(np.sum(count_mat,axis=0), (count_mat.shape[0],1))
-        signac_mat = np.log(1 + np.multiply(1e4*tf_mat,  np.tile((1.0 * count_mat.shape[1] / np.sum(count_mat,axis=1)).reshape(-1,1), (1,count_mat.shape[1]))))
-        return scipy.sparse.csr_matrix(signac_mat)
- 
-    def tfidf3(count_mat): 
-        model = TfidfTransformer(smooth_idf=False, norm="l2")
-        model = model.fit(np.transpose(count_mat))
-        model.idf_ -= 1
-        tf_idf = np.transpose(model.transform(np.transpose(count_mat)))
-        return scipy.sparse.csr_matrix(tf_idf)
-    
-    if tfidf=='tfidf0':
-        X_norm = sc.pp.normalize_total(adata, inplace=False)['X']
-        adata.X = X_norm.copy()
-    if tfidf=='tfidf1': 
-        tfidf_res = tfidf1(adata.X.T).T
-        adata.X = tfidf_res.copy()
-    if tfidf=='tfidf2': 
-        tfidf_res = tfidf2(adata.X.T).T
-        adata.X = tfidf_res.copy()
-    if tfidf=='tfidf3': 
-        tfidf_res = tfidf3(adata.X.T).T
-        adata.X = tfidf_res.copy()
         
         
         

@@ -1,4 +1,4 @@
-[![PyPI](https://img.shields.io/pypi/v/scFountain.svg)](https://pypi.org/project/scFountain/)
+[![PyPI](https://img.shields.io/pypi/v/scFountain.svg)](https://pypi.org/project/scFountain/) [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.14924285.svg)](https://doi.org/10.5281/zenodo.14924285)
 
 # Rigorous integration of single-cell ATAC-seq data using regularized barycentric mapping
 ![](Fountain.png)
@@ -86,7 +86,9 @@ import matplotlib.pyplot as plt
   batchind_dict=create_batchind_dict(adata,batch_name='batch')
   batchsize=min(128*len(batchind_dict),1024)
   dataloader=create_dataloader(adata,batch_size=batchsize,batchind_dict=batchind_dict,batch_name='batch',num_worker=4,droplast=False)
+  # The users can design the architecture of the encoder network by themselfs as follows:
   enc=[['fc', 1024, '', 'gelu'],['fc', 256, '', 'gelu'],['fc', 16, '', '']]
+  # The users can design the architecture of the decoder network by themselfs as follows:
   dec=[['fc', adata.X.shape[1], '', '']]
   early_stopping= None
   device='cuda:0'
