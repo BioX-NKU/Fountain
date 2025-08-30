@@ -5,14 +5,14 @@
 
 ## Package installation
 
-It is prefered to create a new environment for Fountain.
+It is recommended to create a new environment for Fountain.
 
 ```
 conda create -n Fountain python==3.8
 conda activate Fountain
 ```
 
-Fountain is available on [PyPI](https://pypi.org/project/scFountain/), and could be installed using
+Fountain is available on [PyPI](https://pypi.org/project/scFountain/) and can be installed using
 
 ```
 pip install scFountain
@@ -32,7 +32,7 @@ Usage and examples of Fountain's main functions are shown in [tutorial](https://
 
 ## Quick Start
 
-Fountain is a deep learning framework for batch integration on scATAC-seq data utilizing regularized barycentric mapping. Fountain can be easily used for: generating batch-corrected low-dimensional embeddings, generating batch-corrected and enhanced ATAC profiles in the original dimension, and online integration. 
+Fountain is a deep learning framework for batch integration on scATAC-seq data utilizing regularized barycentric mapping. Fountain supports: generating batch-corrected low-dimensional embeddings, generating batch-corrected and enhanced ATAC profiles in the original dimensionality, and online bacth integration. 
 
 
 ### Input format
@@ -64,7 +64,7 @@ import matplotlib.pyplot as plt
 
 
 
-* After data preprocessing, you should load the raw count matrix scATAC-seq data via:
+* First, load and preprocess the raw scATAC-seq count matrix, including binarization and filtering peaks with low counts to reduce noise (typically 1-5% of cells). While stricter filtering improves training time and memory, it may compromise biological signal retention.
   
   ```python
   adata=sc.read("./MB.h5ad")
@@ -74,29 +74,33 @@ import matplotlib.pyplot as plt
   ```
   
   
-  Anndata object is a Python object/container designed for storing single-cell data in Python packege [**anndata**](https://anndata.readthedocs.io/en/latest/) which is seamlessly integrated with [**scanpy**](https://scanpy.readthedocs.io/en/stable/), a widely-used Python library for single-cell data analysis.
+  Anndata object is a Python object/container designed for storing single-cell data in Python packege [**anndata**](https://anndata.readthedocs.io/en/latest/), which is seamlessly integrated with [**scanpy**](https://scanpy.readthedocs.io/en/stable/), a widely-used Python library for single-cell data analysis.
 
  
 ### 2. Model training
 
-* Model initialization.
+* Next, initialize the dataloader and define the model architecture.
 
   
   ```python
   batchind_dict=create_batchind_dict(adata,batch_name='batch')
   batchsize=min(128*len(batchind_dict),1024)
   dataloader=create_dataloader(adata,batch_size=batchsize,batchind_dict=batchind_dict,batch_name='batch',num_worker=4,droplast=False)
-  # The users can design the architecture of the encoder network by themselfs as follows:
+  # Define the encoder and decoder architectures. This example uses a three-layer MLP. ['fc', 1024, '', 'gelu'] denotes fully connected layer with output dimmention 1024 and gelu activation.
   enc=[['fc', 1024, '', 'gelu'],['fc', 256, '', 'gelu'],['fc', 16, '', '']]
-  # The users can design the architecture of the decoder network by themselfs as follows:
+  # Decoder: Simple single-layer architecture matching input dimension
+  # Note: For complex cases (e.g., severe batch effects), consider deeper architectures like: dec = [['fc', 256, '', 'gelu'], ['fc', adata.X.shape[1], '', '']] to enhance the model's capacity to capture batch-specific variations.
   dec=[['fc', adata.X.shape[1], '', '']]
-  early_stopping= None
-  device='cuda:0'
+
+  early_stopping= None   # Early stopping is omitted here for brevity.
+  device='cuda:0' # Recommended to run on GPU for better performance
   ```
 
 
 
-* Fountain model can be easily trained as following:
+* Train the Fountain model. The training process is divided into two phases:
+  Phase 1 (0 to mid_iteration): Training without batch correction (VAE loss only).
+  Phase 2 (mid_iteration to max_iteration): Training with batch correction (VAE loss + MSE loss).
   
   ```python
   model.train(            
@@ -113,13 +117,14 @@ import matplotlib.pyplot as plt
   
 ### 3. Generating batch-corrected low-dimensional embeddings
 
-* Fountain provides an API to get batch-corrected low-dimensional embeddings of scATAC-seq data. You can get batch-corrected embeddings by:
+* After training, one can extract the batch-corrected embeddings as follows.
   
   ```python
+  # Get the latent embeddings and store them in adata.obsm
   emb='fountain'
   adata.obsm[emb]=model.get_latent(dataloader,device=device)
   ```
-* We provide codes to visualization the low-dimensional embeddings of data:
+* Visualize the results using UMAP
 
   ```python
   sc.pp.neighbors(adata, use_rep='fountain')
@@ -129,7 +134,7 @@ import matplotlib.pyplot as plt
 
 ### 4. Generating batch-corrected and enhanced ATAC profiles in the original dimension
 
-* Fountain provides an API to get batch-corrected and enhanced ATAC profiles in the original dimension. We also provide a [tutorial](https://github.com/BioX-NKU/Fountain/tree/main/Tutorials/Batch%20correction.ipynb) for using Fountain to Generate batch-corrected and enhanced ATAC profiles in the original dimension. You can get the enhanced data by:
+* Fountain can also generate corrected and denoised ATAC profiles in the original feature space. For a detailed guide, see [tutorial](https://github.com/BioX-NKU/Fountain/tree/main/Tutorials/Batch%20correction.ipynb). Here is a basic workflow:
   
   ```python
   adata.layers['enhance']=model.enhance(adata,device=device,batch_name='batch')
@@ -137,12 +142,13 @@ import matplotlib.pyplot as plt
 
 ### 5. Using Fountain-enhanced ATAC profiles for data analysis
 
-* You can chick  [enhanced_MB.h5ad](https://drive.google.com/file/d/13nLqv6IC1OzqrgjnRMJ-MvWBFeW6f6Ur/view?usp=drive_link) to download the example dataset that have been enhanced by Fountain and directly try the [tutorial](https://github.com/BioX-NKU/Fountain/tree/main/Tutorials/Data%20analysis.ipynb) for using Fountain-enhanced ATAC profiles for data analysis. 
+* One can download a Fountain-enhanced example dataset from [enhanced_MB.h5ad](https://drive.google.com/file/d/13nLqv6IC1OzqrgjnRMJ-MvWBFeW6f6Ur/view?usp=drive_link) to explore Fountain's capabilities. This pre-processed dataset is ready for immediate analysis using our [tutorial](https://github.com/BioX-NKU/Fountain/tree/main/Tutorials/Data%20analysis.ipynb).
+
 
 ### 6. Achieving online integration
 
-* You can achieve online integration through the model.get_latent function. Please refer to the [tutorial](https://github.com/BioX-NKU/Fountain/blob/main/Tutorials/Online%20integration.ipynb) for more details.
+* One can achieve online integration through the model.get_latent function. Please refer to the [tutorial](https://github.com/BioX-NKU/Fountain/blob/main/Tutorials/Online%20integration.ipynb) for more details.
   
-### 7. Correcting batch effect of scRNA-seq data.
+### 7. Extending Fountain to scRNA-seq Batch Correction
 
-* Fountain not only allows for batch effect correction in scATAC-seq data, but it can also be extended to other omics. Using the framework of Fountain for batch effect correction in scRNA-seq data is a promising approach. We provide a example [tutorial](https://github.com/BioX-NKU/Fountain/tree/main/Tutorials/Correct%20batch%20effect%20of%20scRNA-seq%20data.ipynb) on how to and apply Fountain to correct batch effects in scRNA-seq data.
+* While originally developed for scATAC-seq data, Fountain's flexible architecture makes it also effective for other omics such as  scRNA-seq data. We provide an example [tutorial](https://github.com/BioX-NKU/Fountain/tree/main/Tutorials/Correct%20batch%20effect%20of%20scRNA-seq%20data.ipynb) on applying Fountain to scRNA-seq data. 
